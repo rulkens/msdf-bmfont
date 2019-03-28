@@ -43,6 +43,7 @@ function generateBMFont (fontPath, opt, callback) {
   const textureHeight = opt.textureHeight || 512;
   const texturePadding = opt.texturePadding || 2;
   const distanceRange = opt.distanceRange || 3;
+  const padding = opt.padding || 5;
   const fieldType = opt.fieldType || 'msdf';
   if (fieldType !== 'msdf' && fieldType !== 'sdf' && fieldType !== 'psdf') {
     throw new TypeError('fieldType must be one of msdf, sdf, or psdf');
@@ -63,7 +64,8 @@ function generateBMFont (fontPath, opt, callback) {
       char,
       fontSize,
       fieldType,
-      distanceRange
+      distanceRange,
+      padding
     }, (err, res) => {
       if (err) return cb(err);
       cb(null, res);
@@ -140,7 +142,7 @@ function generateBMFont (fontPath, opt, callback) {
 }
 
 function generateImage (opt, callback) {
-  const {binaryPath, font, char, fontSize, fieldType, distanceRange} = opt;
+  const {binaryPath, font, char, fontSize, fieldType, distanceRange, padding} = opt;
   const glyph = font.charToGlyph(char);
   const commands = glyph.getPath(0, 0, fontSize).commands;
   let contours = [];
@@ -200,11 +202,11 @@ function generateImage (opt, callback) {
   if (contours.some(cont => cont.length === 1)) console.log('length is 1, failed to normalize glyph');
   const scale = fontSize / font.unitsPerEm;
   const baseline = font.ascender * (fontSize / font.unitsPerEm);
-  const pad = 5;
-  let width = Math.round(bBox.right - bBox.left) + pad + pad;
-  let height = Math.round(bBox.top - bBox.bottom) + pad + pad;
-  let yOffset = -bBox.bottom + pad;
-  let command = `${binaryPath} ${fieldType} -format text -stdout -size ${width} ${height} -translate ${pad} ${yOffset} -pxrange ${distanceRange} -defineshape "${shapeDesc}"`;
+  let width = Math.round(bBox.right - bBox.left) + padding + padding;
+  let height = Math.round(bBox.top - bBox.bottom) + padding + padding;
+  let xOffset = -bBox.left + padding;
+  let yOffset = -bBox.bottom + padding;
+  let command = `${binaryPath} ${fieldType} -format text -stdout -size ${width} ${height} -translate ${xOffset} ${yOffset} -pxrange ${distanceRange} -defineshape "${shapeDesc}"`;
 
   exec(command, (err, stdout, stderr) => {
     if (err) return callback(err);
@@ -244,7 +246,7 @@ function generateImage (opt, callback) {
           width: width,
           height: height,
           xoffset: 0,
-          yoffset: bBox.bottom - pad + baseline,
+          yoffset: bBox.bottom - padding + baseline,
           xadvance: glyph.advanceWidth * scale,
           chnl: 15
         }
